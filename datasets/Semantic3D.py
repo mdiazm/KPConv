@@ -85,7 +85,7 @@ def grid_subsampling(points, features=None, labels=None, sampleDl=0.1, verbose=0
 
 class Semantic3DDataset(Dataset):
     """
-    Class to handle S3DIS dataset for segmentation task.
+    Class to handle Semantic3D dataset for segmentation task.
     """
 
     # Initiation methods

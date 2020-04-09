@@ -1,0 +1,5 @@
+# Data directory
+Data/*
+
+# PLY files
+*.ply
