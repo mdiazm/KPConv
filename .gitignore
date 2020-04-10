@@ -3,3 +3,6 @@ Data/*
 
 # PLY files
 *.ply
+
+# PyCharm Project files
+.idea/*
