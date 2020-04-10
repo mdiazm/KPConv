@@ -50,19 +50,18 @@ class LiDARDataset(Dataset):
     """
 
     def __init__(self, input_threads=8):
-        Dataset.__init(self, 'LiDAR')
+        Dataset.__init__(self, 'LiDAR')
 
-        self.label_to_names = {
-            0: 'unlabeled',
-            1: 'man-made terrain',
-            2: 'natural terrain',
-            3: 'high vegetation',
-            4: 'low vegetation',
-            5: 'buildings',
-            6: 'hard scape',
-            7: 'scanning artefacts',
-            8: 'cars'
-        }
+        self.label_to_names = {0: 'unclassified',
+                               1: 'ground',
+                               2: 'buildings',
+                               3: 'poles',
+                               4: 'bollards',
+                               5: 'trash_cans',
+                               6: 'barriers',
+                               7: 'pedestrians',
+                               8: 'cars',
+                               9: 'natural'}
 
         # Initialize variables concerning class labels
         self.init_labels()
@@ -98,8 +97,9 @@ class LiDARDataset(Dataset):
         self.prepare_data()
 
         # List of training and test files
-        self.train_files = np.sort([join(self.train_path), f] for f in listdir(self.train_path) if f[-4:] == '.ply') # f[-4:] returns last 4 characters of the file name (extension)
-        self.test_files = np.sort([join(self.test_path), f] for f in listdir(self.test_path) if f[-4] == '.ply')
+        if len(listdir(self.train_path)) > 0:
+           self.train_files = np.sort([join(self.train_path, f) for f in listdir(self.train_path) if f[-4:] == '.ply']) # f[-4:] returns last 4 characters of the file name (extension)
+        self.test_files = np.sort([join(self.test_path, f) for f in listdir(self.test_path) if f[-4:] == '.ply'])
 
     def prepare_data(self):
         """
@@ -123,7 +123,7 @@ class LiDARDataset(Dataset):
         for cloud_name in cloud_names:
 
             # Name of the input file
-            input_file = join(old_folder, cloud_name + '.ply')
+            input_file = join(train_folder, cloud_name + '.ply')
 
             # Name of the output file
             ply_file_full = join(self.train_path, cloud_name + '.ply')
@@ -172,10 +172,10 @@ class LiDARDataset(Dataset):
         for cloud_name in cloud_names:
 
             # Name of the input file
-            input_file = join(old_folder, cloud_name + '.ply')
+            input_file = join(test_folder, cloud_name + '.ply')
 
             # Name of the output file
-            ply_file_full = join(self.train_path, cloud_name + '.ply')
+            ply_file_full = join(self.test_path, cloud_name + '.ply')
 
             # Pass if this cloud was processed yet
             if exists(ply_file_full):
@@ -280,7 +280,7 @@ class LiDARDataset(Dataset):
                 if cloud_split == 'test':
                     int_features = None
                 else:
-                    int_features = data['class']
+                    int_features = data['scalar_Classification']
 
                 # Subsample cloud
                 sub_data = grid_subsampling(points,
@@ -771,7 +771,7 @@ class LiDARDataset(Dataset):
         return np.vstack((data['x'], data['y'], data['z'])).T
 
     # Debug methods
-    # -------------
+    # ------------------------------------------------------------------------------------------------------------------
 
     def check_input_pipeline_timing(self, config):
 
