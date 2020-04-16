@@ -91,6 +91,9 @@ class LiDARDataset(Dataset):
 
         }
 
+        # Type of task conducted on this dataset
+        self.network_model = 'cloud_segmentation'
+
         """
         Prepare PLY files
         """
@@ -119,7 +122,7 @@ class LiDARDataset(Dataset):
         # Generate train files (subsample clouds)
 
         # PLY files containing points
-        cloud_names = [file_name[:-4] for file_name in listdir(train_folder)]
+        cloud_names = [file_name[:-4] for file_name in listdir(train_folder) if file_name[-4:] == '.ply']
         for cloud_name in cloud_names:
 
             # Name of the input file
@@ -152,23 +155,26 @@ class LiDARDataset(Dataset):
             colors = np.column_stack((r, g, b))
 
             # Labels
-            labels = np.asarray(data['scalar_Classification'], dtype=np.int32)
+            # labels = np.asarray(data['scalar_Classification'], dtype=np.int32) # TODO review this. Only for this case.
+            labels = np.zeros(points.shape[0], dtype=np.int32)
 
             # Subsample file
-            sub_points, sub_colors, sub_labels = grid_subsampling(points,
-                                                                  features=colors,
-                                                                  labels=labels,
-                                                                  sampleDl=0.01)
+            # sub_points, sub_colors, sub_labels = grid_subsampling(points,
+            #                                                       features=colors,
+            #                                                       labels=labels,
+            #                                                       sampleDl=0.01)
+
+            sub_points, sub_colors, sub_labels = points, colors, labels
 
             # Write subsampled file
             write_ply(
                 ply_file_full, # File where data is going to be written
                 (sub_points, sub_colors, sub_labels), # Data to be written
-                ['x', 'y', 'z', 'rec', 'green', 'blue', 'class'] # Headers of the data to be written
+                ['x', 'y', 'z', 'red', 'green', 'blue', 'class'] # Headers of the data to be written
             )
 
         # Generate test files (change ply format, deleting unnecesary fields)
-        cloud_names = [file_name[:-4] for file_name in listdir(test_folder)]
+        cloud_names = [file_name[:-4] for file_name in listdir(test_folder) if file_name[-4:] == '.ply']
         for cloud_name in cloud_names:
 
             # Name of the input file
@@ -204,7 +210,7 @@ class LiDARDataset(Dataset):
             write_ply(
                 ply_file_full,  # File where data is going to be written
                 (points, colors),  # Data to be written
-                ['x', 'y', 'z', 'rec', 'green', 'blue']  # Headers of the data to be written
+                ['x', 'y', 'z', 'red', 'green', 'blue']  # Headers of the data to be written
             )
 
     def load_subsampled_clouds(self, subsampling_parameter):
@@ -280,13 +286,15 @@ class LiDARDataset(Dataset):
                 if cloud_split == 'test':
                     int_features = None
                 else:
-                    int_features = data['scalar_Classification']
+                    int_features = data['class']
 
-                # Subsample cloud
-                sub_data = grid_subsampling(points,
-                                            features=colors,
-                                            labels=int_features,
-                                            sampleDl=subsampling_parameter)
+                # Subsample cloud TODO uncomment below code
+                # sub_data = grid_subsampling(points,
+                #                             features=colors,
+                #                             labels=int_features,
+                #                             sampleDl=subsampling_parameter)
+
+                sub_data = (points, colors, int_features)
 
                 # Rescale float color and squeeze label
                 sub_colors = sub_data[1] / 255
@@ -355,7 +363,7 @@ class LiDARDataset(Dataset):
                     # Get the original points
                     data = read_ply(file_path)
                     points = np.vstack((data['x'], data['y'], data['z'])).T
-                    labels = data['class']
+                    labels = np.zeros(points.shape[0], dtype=np.int32)
 
                     # Compute projection inds. Get indices of all the points. For each training set.
                     proj_inds = np.squeeze(self.input_trees['validation'][i_val].query(points, return_distance=False))
@@ -387,7 +395,7 @@ class LiDARDataset(Dataset):
                     labels = np.zeros(points.shape[0], dtype=np.int32)
 
                     # Compute projection inds
-                    proj_inds = np.squeeze(self.input_trees['test'][i_test].query(points), return_distance=False)
+                    proj_inds = np.squeeze(self.input_trees['test'][i_test].query(points, return_distance=False))
                     proj_inds = proj_inds.astype(np.int32)
 
                     # Save
@@ -754,6 +762,8 @@ class LiDARDataset(Dataset):
             input_list += [point_inds, cloud_inds]
 
             return input_list
+
+        return tf_map
 
     def load_evaluation_points(self, file_path):
         """

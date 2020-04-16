@@ -513,13 +513,13 @@ class Dataset:
 
         else:
 
-            if len(self.input_points['training']) > 0:
+            if len(self.input_trees['training']) > 0:
                 split = 'training'
             else:
                 split = 'test'
 
             # Get sizes at training and sort them
-            sizes = np.sort([p.shape[0] for p in self.input_points[split]])
+            sizes = np.sort([p.shape[0] for p in self.input_trees[split]])
 
         # Higher bound for batch limit
         lim = sizes[-1] * config.batch_num
@@ -562,7 +562,7 @@ class Dataset:
 
         else:
 
-            if len(self.input_points['training']) > 0:
+            if len(self.input_trees['training']) > 0:
                 split = 'training'
             else:
                 split = 'test'

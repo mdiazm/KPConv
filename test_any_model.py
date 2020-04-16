@@ -41,6 +41,8 @@ from datasets.NPM3D import NPM3DDataset
 from datasets.Semantic3D import Semantic3DDataset
 from datasets.LiDAR import LiDARDataset
 
+import tensorflow as tf
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 #
@@ -140,6 +142,8 @@ def test_caller(path, step_ind, on_val):
     elif config.dataset.startswith('ModelNet40'):
         model = KernelPointCNN(dataset.flat_inputs, config)
     elif config.dataset.startswith('Semantic3D'):
+        model = KernelPointFCNN(dataset.flat_inputs, config)
+    elif config.dataset.startswith('LiDAR'):
         model = KernelPointFCNN(dataset.flat_inputs, config)
     else:
         raise ValueError('Unsupported dataset : ' + config.dataset)
